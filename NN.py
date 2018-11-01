@@ -11,27 +11,33 @@ class NN(object):
         self.biasInput = 0.5
         self.biasHidden = 0.5
 
+        self.learningRate = 0.05
+
         # initialize weights with random values between 0 and 1
-        self.W1 = np.random.randn(self.inputNodes + 1, self.hiddenNodes + 1)
+        self.W1 = np.random.randn(self.inputNodes + 1, self.hiddenNodes)
         self.W2 = np.random.randn(self.hiddenNodes + 1, self.outputNodes)
 
         self.layer1 = None
         self.output = None
 
     def forward(self, x):
-        x = np.insert(x, 0, self.biasInput, 1) # add bias node
+        x = np.insert(x, 0, self.biasInput, 1)  # add bias node input layer
         self.layer1 = self.sigmoid(np.dot(x, self.W1))
 
-        # add bias node
-        # layer1 = np.insert(self.layer1, 0, self.biasHidden, 1)
-        self.output = self.sigmoid(np.dot(self.layer1, self.W2))
+        layer1 = np.insert(self.layer1, 0, self.biasHidden, 1)  # add bias node hidden layer
+        self.output = self.sigmoid(np.dot(layer1, self.W2))
 
     def backward(self, x, y):
-        x = np.insert(x, 0, self.biasInput, 1) # add bias node
-        d_values1 = 2*(y - self.output) * self.sigmoid_prime(self.output)
-        d_w2 = np.dot(self.layer1.T, d_values1)
-        d_values2 = np.dot(d_values1, self.W2.T) * self.sigmoid_prime(self.layer1)
-        d_w1 = np.dot(x.T, d_values2)
+        layer1 = np.insert(self.layer1, 0, self.biasHidden, 1)  # add bias node hidden layer
+        d_values2 = 2 * (y - self.output) * self.sigmoid_prime(self.output)
+        d_w2 = np.dot(layer1.T, d_values2)
+
+        x = np.insert(x, 0, self.biasInput, 1)  # add bias node input layer
+        d_values1 = np.dot(d_values2, self.W2[1:].T) * self.sigmoid_prime(self.layer1)
+        d_w1 = np.dot(x.T, d_values1)
+
+        d_w1 = self.learningRate * d_w1
+        d_w2 = self.learningRate * d_w2
 
         # update the weights with the derivative (slope) of the loss function
         self.W1 += d_w1
@@ -42,8 +48,10 @@ class NN(object):
         self.backward(x, y)
 
     def predict(self, x):
-        x = np.insert(x, 0, self.biasInput, 1) # add bias node
+        x = np.insert(x, 0, self.biasInput, 1)  # add bias node input layer
         layer1 = self.sigmoid(np.dot(x, self.W1))
+
+        layer1 = np.insert(layer1, 0, self.biasHidden, 1)  # add bias node hidden layer
         return self.sigmoid(np.dot(layer1, self.W2))
 
     def save_weights(self):
