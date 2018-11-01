@@ -8,18 +8,26 @@ class NN(object):
         self.outputNodes = 8
         self.hiddenNodes = 3
 
+        self.biasInput = 0.5
+        self.biasHidden = 0.5
+
         # initialize weights with random values between 0 and 1
-        self.W1 = np.random.randn(self.inputNodes, self.hiddenNodes)
-        self.W2 = np.random.randn(self.hiddenNodes, self.outputNodes)
+        self.W1 = np.random.randn(self.inputNodes + 1, self.hiddenNodes + 1)
+        self.W2 = np.random.randn(self.hiddenNodes + 1, self.outputNodes)
 
         self.layer1 = None
         self.output = None
 
     def forward(self, x):
+        x = np.insert(x, 0, self.biasInput, 1) # add bias node
         self.layer1 = self.sigmoid(np.dot(x, self.W1))
+
+        # add bias node
+        # layer1 = np.insert(self.layer1, 0, self.biasHidden, 1)
         self.output = self.sigmoid(np.dot(self.layer1, self.W2))
 
     def backward(self, x, y):
+        x = np.insert(x, 0, self.biasInput, 1) # add bias node
         d_values1 = 2*(y - self.output) * self.sigmoid_prime(self.output)
         d_w2 = np.dot(self.layer1.T, d_values1)
         d_values2 = np.dot(d_values1, self.W2.T) * self.sigmoid_prime(self.layer1)
@@ -34,6 +42,7 @@ class NN(object):
         self.backward(x, y)
 
     def predict(self, x):
+        x = np.insert(x, 0, self.biasInput, 1) # add bias node
         layer1 = self.sigmoid(np.dot(x, self.W1))
         return self.sigmoid(np.dot(layer1, self.W2))
 
