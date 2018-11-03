@@ -1,30 +1,51 @@
 import numpy as np
 import NN
+import matplotlib.pyplot as plt
 
 
 def main():
     input_data = np.array([[1, 0, 0, 0, 0, 0, 0, 0],
-                          [0, 1, 0, 0, 0, 0, 0, 0],
-                          [0, 0, 1, 0, 0, 0, 0, 0],
-                          [0, 0, 0, 1, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 1, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 1, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0, 0, 0, 1]])
+                           [0, 1, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 1, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 1, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 1]])
 
     nn = NN.NN()
 
     print("Input: \n" + str(input_data))
     print("Actual Output: \n" + str(input_data))
 
-    for i in range(5000):
-        print(" #" + str(i) + "\n")
-        print("Predicted Output: \n" + str(nn.predict(input_data).round(3)))
-        print("Loss: \n" + str(np.mean(np.square(input_data - nn.predict(input_data)))))  # mean sum squared loss
-        print("\n")
+    xaxis = []
+    errors = []
+    predictions = []
+
+    for i in range(5001):
+        if i % 500 == 0:
+            xaxis.append(i)
+            print(" #" + str(i) + "\n")
+            prediction = nn.predict(input_data).round(3)
+            predictions.append(prediction)
+            print("Predicted Output: \n" + str(prediction))
+            error = np.mean(np.square(input_data - nn.predict(input_data))).round(4)
+            errors.append(error)
+            print("Loss: \n" + str(error))  # mean sum squared loss
+            print("\n")
 
         nn.train(input_data, input_data)
 
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+    ax1.plot(xaxis, np.array(errors))
+
+    predictions = np.array(predictions)
+
+    for i in range(8):
+        ax2.plot(xaxis, predictions[:, i, i])
+
+    plt.show()
 
 
 if __name__ == '__main__':

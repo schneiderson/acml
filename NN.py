@@ -8,8 +8,8 @@ class NN(object):
         self.outputNodes = 8
         self.hiddenNodes = 3
 
-        self.biasInput = 0.5
-        self.biasHidden = 0.5
+        self.biasInput = 1
+        self.biasHidden = 1
 
         self.learningRate = 0.05
 
