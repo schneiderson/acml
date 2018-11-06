@@ -22,7 +22,7 @@ def main():
     errors = []
     predictions = []
 
-    for i in range(5001):
+    for i in range(20001):
         if i % 500 == 0:
             xaxis.append(i)
             print(" #" + str(i) + "\n")
@@ -45,7 +45,28 @@ def main():
     for i in range(8):
         ax2.plot(xaxis, predictions[:, i, i])
 
+    print("\n\nweights layer 1:")
+    print(nn.W1)
+    print("\n\nbias weights layer 1:")
+    print(nn.bw1)
+
+    print("\n\nweights layer 2 (output):")
+    print(nn.W2)
+    print("\n\nbias weights layer 2 (output):")
+    print(nn.bw2)
+
+    print("\n\nhidden layer activations:")
+    print(nn.layer1)
+
+    print("\n\nhidden layer activations (rounded):")
+    print(np.round(nn.layer1, 0))
+
+    print("\n\noutput layer activations:")
+    print(nn.output)
+
     plt.show()
+
+    fig.savefig("graphs.pdf", bbox_inches='tight')
 
 
 if __name__ == '__main__':

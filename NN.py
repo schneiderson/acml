@@ -15,7 +15,7 @@ class NN(object):
 
         self.scale_by_input_size = False
 
-        self.reg = 0.0001
+        self.reg = 0.002
 
         # initialize weights with random values between 0 and 0.1
         self.W1 = np.random.randn(self.inputNodes, self.hiddenNodes) * 0.1
