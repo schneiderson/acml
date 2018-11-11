@@ -1,7 +1,7 @@
 import feedparser
 import re
 
-file = open("clickbait.txt", "w+")
+file = open("clickbait.txt", "w+", encoding='utf-8')
 include_descr = False
 
 feeds = ["https://www.buzzfeed.com/omg.xml",
