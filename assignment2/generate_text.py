@@ -11,27 +11,23 @@ has at least ~100k characters. ~1M is better.
 '''
 
 from __future__ import print_function
-from keras.callbacks import LambdaCallback
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.layers import LSTM
-from keras.optimizers import RMSprop
-from keras.utils.data_utils import get_file
+from keras.models import model_from_json
 import numpy as np
 import random
 import sys
 import io
 import os
 
+from keras.optimizers import RMSprop
+
 name = 'clickbait'
+episode = 50
 path = name + '.txt'
-#path = get_file(
-#    'nietzsche.txt.txt',
-#    origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
+# path = get_file(
+#     'nietzsche.txt.txt',
+#     origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
 
-
-
-directory = name + '_weights_tmp'
+directory = name + '_weights'
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -40,39 +36,27 @@ with io.open(path, encoding='utf-8') as f:
 print('corpus length:', len(text))
 
 chars = sorted(list(set(text)))
-print(chars)
 print('total chars:', len(chars))
 char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
-# cut the text in semi-redundant sequences of maxlen characters
 maxlen = 40
-step = 3
-sentences = []
-next_chars = []
-for i in range(0, len(text) - maxlen, step):
-    sentences.append(text[i: i + maxlen])
-    next_chars.append(text[i + maxlen])
-print('nb sequences:', len(sentences))
 
-print('Vectorization...')
-x = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
-y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
-for i, sentence in enumerate(sentences):
-    for t, char in enumerate(sentence):
-        x[i, t, char_indices[char]] = 1
-    y[i, char_indices[next_chars[i]]] = 1
-
-
-# build the model: a single LSTM
-print('Build model...')
-model = Sequential()
-model.add(LSTM(128, input_shape=(maxlen, len(chars))))
-model.add(Dropout(0.2))
-model.add(Dense(len(chars), activation='softmax'))
+# load the model
+print('Load model...')
+# load json and create model
+model_file = directory + "/" + name + str(episode) + ".json"
+json_file = open(model_file, 'r')
+loaded_model_json = json_file.read()
+json_file.close()
+loaded_model = model_from_json(loaded_model_json)
+# load weights into new model
+weights_file = directory + "/" + name + str(episode) + '.h5'
+loaded_model.load_weights(weights_file)
+print("Loaded model from disk")
 
 optimizer = RMSprop(lr=0.01)
-model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+loaded_model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 
 def sample(preds, temperature=1.0):
@@ -85,19 +69,7 @@ def sample(preds, temperature=1.0):
     return np.argmax(probas)
 
 
-def on_epoch_end(epoch, _):
-    # Function invoked at end of each epoch. Prints generated text.
-    print('saving intermediate model... \n')
-    model_json = model.to_json()
-    f_name = directory + '/' + name + str(epoch)
-    with open(f_name + '.json', "w") as json_file:
-        json_file.write(model_json)
-    # serialize weights to HDF5
-    model.save_weights(f_name + '.h5')
-    print("Saved model to disk")
-
-    print()
-    print('----- Generating text after Epoch: %d' % epoch)
+def get_text():
 
     start_index = random.randint(0, len(text) - maxlen - 1)
     for diversity in [0.2, 0.5, 1.0, 1.2]:
@@ -109,12 +81,12 @@ def on_epoch_end(epoch, _):
         print('----- Generating with seed: "' + sentence + '"')
         sys.stdout.write(generated)
 
-        for i in range(400):
+        for i in range(100):
             x_pred = np.zeros((1, maxlen, len(chars)))
             for t, char in enumerate(sentence):
                 x_pred[0, t, char_indices[char]] = 1.
 
-            preds = model.predict(x_pred, verbose=0)[0]
+            preds = loaded_model.predict(x_pred, verbose=0)[0]
             next_index = sample(preds, diversity)
             next_char = indices_char[next_index]
 
@@ -125,9 +97,31 @@ def on_epoch_end(epoch, _):
             sys.stdout.flush()
         print()
 
-print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
+def get_text_from_String(input):
 
-model.fit(x, y,
-          batch_size=128,
-          epochs=60,
-          callbacks=[print_callback])
+    for diversity in [0.2, 0.5, 1.0, 1.2]:
+        print('----- diversity:', diversity)
+
+        generated = ''
+        sentence = input
+        generated += sentence
+        print('----- Generating with seed: "' + sentence + '"')
+        sys.stdout.write(generated)
+
+        for i in range(200):
+            x_pred = np.zeros((1, maxlen, len(chars)))
+            for t, char in enumerate(sentence):
+                x_pred[0, t, char_indices[char]] = 1.
+
+            preds = loaded_model.predict(x_pred, verbose=0)[0]
+            next_index = sample(preds, diversity)
+            next_char = indices_char[next_index]
+
+            generated += next_char
+            sentence = sentence[1:] + next_char
+
+            sys.stdout.write(next_char)
+            sys.stdout.flush()
+        print()
+
+get_text_from_String('the advances in neuronal networks are th')
