@@ -23,15 +23,31 @@ import sys
 import io
 import os
 
+#-------------
+# PARAMETERS
+#-------------
+
 name = 'clickbait'
 path = name + '.txt'
 #path = get_file(
 #    'nietzsche.txt.txt',
 #    origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
 
+directory = name + '_weights'
+
+maxlen = 40     # length of input sequence
+step = 3
+output_length = 100
+
+hidden_units = 128
+learning_rate = 0.01
 
 
-directory = name + '_weights_tmp'
+#---------------------
+# Start of actual code
+#---------------------
+
+
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -46,8 +62,6 @@ char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
 # cut the text in semi-redundant sequences of maxlen characters
-maxlen = 40
-step = 3
 sentences = []
 next_chars = []
 for i in range(0, len(text) - maxlen, step):
@@ -67,11 +81,11 @@ for i, sentence in enumerate(sentences):
 # build the model: a single LSTM
 print('Build model...')
 model = Sequential()
-model.add(LSTM(128, input_shape=(maxlen, len(chars))))
+model.add(LSTM(hidden_units, input_shape=(maxlen, len(chars))))
 model.add(Dropout(0.2))
 model.add(Dense(len(chars), activation='softmax'))
 
-optimizer = RMSprop(lr=0.01)
+optimizer = RMSprop(lr=learning_rate)
 model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 
@@ -109,7 +123,7 @@ def on_epoch_end(epoch, _):
         print('----- Generating with seed: "' + sentence + '"')
         sys.stdout.write(generated)
 
-        for i in range(400):
+        for i in range(output_length):
             x_pred = np.zeros((1, maxlen, len(chars)))
             for t, char in enumerate(sentence):
                 x_pred[0, t, char_indices[char]] = 1.
@@ -125,7 +139,9 @@ def on_epoch_end(epoch, _):
             sys.stdout.flush()
         print()
 
+
 print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
+
 
 model.fit(x, y,
           batch_size=128,

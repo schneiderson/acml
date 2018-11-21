@@ -20,12 +20,29 @@ import os
 
 from keras.optimizers import RMSprop
 
+#-------------
+# PARAMETERS
+#-------------
+
 name = 'clickbait'
-episode = 50
+episode = 55
 path = name + '.txt'
-# path = get_file(
-#     'nietzsche.txt.txt',
-#     origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
+#path = get_file(
+#    'nietzsche.txt.txt',
+#    origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
+
+directory = name + '_weights'
+
+maxlen = 40     # length of input sequence
+step = 3
+output_length = 100
+
+learning_rate = 0.01
+
+#---------------------
+# Start of actual code
+#---------------------
+
 
 directory = name + '_weights'
 if not os.path.exists(directory):
@@ -40,7 +57,6 @@ print('total chars:', len(chars))
 char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
-maxlen = 40
 
 # load the model
 print('Load model...')
@@ -55,7 +71,7 @@ weights_file = directory + "/" + name + str(episode) + '.h5'
 loaded_model.load_weights(weights_file)
 print("Loaded model from disk")
 
-optimizer = RMSprop(lr=0.01)
+optimizer = RMSprop(lr=learning_rate)
 loaded_model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 
@@ -69,8 +85,8 @@ def sample(preds, temperature=1.0):
     return np.argmax(probas)
 
 
+# generates output based on a random seed from the text
 def get_text():
-
     start_index = random.randint(0, len(text) - maxlen - 1)
     for diversity in [0.2, 0.5, 1.0, 1.2]:
         print('----- diversity:', diversity)
@@ -97,6 +113,8 @@ def get_text():
             sys.stdout.flush()
         print()
 
+# generates an ouput given a specific seed
+# the seed should be of length maxlength for good results
 def get_text_from_String(input):
 
     for diversity in [0.2, 0.5, 1.0, 1.2]:
@@ -124,4 +142,5 @@ def get_text_from_String(input):
             sys.stdout.flush()
         print()
 
-get_text_from_String('the advances in neuronal networks are th')
+
+get_text_from_String('advanced concepts in machine learning is')
